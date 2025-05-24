@@ -1,13 +1,14 @@
 import { MantineProvider } from '@mantine/core';
+import { HelmetProvider } from 'react-helmet-async';
 import { MortgageCalculator } from './components/MortgageCalculator';
 import '@mantine/core/styles.css';
 
-function App() {
+export default function App() {
   return (
-    <MantineProvider>
-      <MortgageCalculator />
-    </MantineProvider>
+    <HelmetProvider>
+      <MantineProvider>
+        <MortgageCalculator />
+      </MantineProvider>
+    </HelmetProvider>
   );
 }
-
-export default App;
