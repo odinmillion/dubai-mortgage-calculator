@@ -10,14 +10,19 @@ import {
   Card,
   Popover,
   List,
-  Group
+  Group,
+  Box,
+  UnstyledButton,
+  Collapse
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { calculateMortgage } from '../utils/mortgageCalculator';
 import type { MortgageInput, MortgageResult } from '../utils/mortgageCalculator';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 
 export function MortgageCalculator() {
   const [result, setResult] = useState<MortgageResult | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<MortgageInput>({
     initialValues: {
@@ -61,88 +66,118 @@ export function MortgageCalculator() {
 
   return (
     <Container size="md" py="xl">
-      <Title ta="center" mb="xl">
+      <Title ta="center" mb="xl" c="blue.7">
         Dubai Mortgage Calculator
       </Title>
 
-      <Paper shadow="xs" p="md" mb="xl">
+      <Paper shadow="sm" p="xl" radius="md" withBorder>
         <form>
-          <Grid>
-            <Grid.Col span={6}>
-              <NumberInput
-                label="Property Price (AED)"
-                placeholder="Enter property price"
-                {...form.getInputProps('price')}
-                step={50000}
-                min={100000}
-                max={100000000}
-                required
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <NumberInput
-                label="Down Payment (%)"
-                placeholder="Enter down payment percentage"
-                {...form.getInputProps('downPaymentPercentage')}
-                step={1}
-                min={20}
-                max={80}
-                required
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <NumberInput
-                label="Loan Tenure (Years)"
-                placeholder="Enter loan tenure"
-                {...form.getInputProps('tenure')}
-                step={1}
-                min={1}
-                max={30}
-                required
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <NumberInput
-                label="Interest Rate (%)"
-                placeholder="Enter interest rate"
-                {...form.getInputProps('rate')}
-                step={0.1}
-                min={0.1}
-                max={20}
-                decimalScale={2}
-                required
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <NumberInput
-                label="Bank Arrangement Fee (%)"
-                placeholder="Enter bank fee"
-                {...form.getInputProps('bankArrangementFee')}
-                step={0.5}
-                min={0}
-                max={5}
-                decimalScale={2}
-                required
-              />
-            </Grid.Col>
-          </Grid>
+          <Stack gap="md">
+            <Grid>
+              <Grid.Col span={6}>
+                <NumberInput
+                  label="Property Price (AED)"
+                  description="Minimum 100,000 AED"
+                  placeholder="Enter property price"
+                  {...form.getInputProps('price')}
+                  step={50000}
+                  min={100000}
+                  max={100000000}
+                  required
+                  size="md"
+                  hideControls={false}
+                />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <NumberInput
+                  label="Down Payment (%)"
+                  description="20-80% of property price"
+                  placeholder="Enter down payment percentage"
+                  {...form.getInputProps('downPaymentPercentage')}
+                  step={1}
+                  min={20}
+                  max={80}
+                  required
+                  size="md"
+                  hideControls={false}
+                />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <NumberInput
+                  label="Loan Tenure (Years)"
+                  description="1-30 years"
+                  placeholder="Enter loan tenure"
+                  {...form.getInputProps('tenure')}
+                  step={1}
+                  min={1}
+                  max={30}
+                  required
+                  size="md"
+                  hideControls={false}
+                />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <NumberInput
+                  label="Interest Rate (%)"
+                  description="Annual interest rate"
+                  placeholder="Enter interest rate"
+                  {...form.getInputProps('rate')}
+                  step={0.1}
+                  min={0.1}
+                  max={20}
+                  decimalScale={2}
+                  required
+                  size="md"
+                  hideControls={false}
+                />
+              </Grid.Col>
+            </Grid>
+
+            <UnstyledButton 
+              onClick={() => setShowAdvanced((o) => !o)}
+              style={{ width: '100%', textAlign: 'left' }}
+            >
+              <Group>
+                {showAdvanced ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+                <Text size="sm" c="dimmed">Advanced Settings</Text>
+              </Group>
+            </UnstyledButton>
+
+            <Collapse in={showAdvanced}>
+              <Box>
+                <NumberInput
+                  label="Bank Arrangement Fee (%)"
+                  description="0-5% of loan amount"
+                  placeholder="Enter bank fee"
+                  {...form.getInputProps('bankArrangementFee')}
+                  step={0.5}
+                  min={0}
+                  max={5}
+                  decimalScale={2}
+                  required
+                  size="md"
+                  hideControls={false}
+                />
+              </Box>
+            </Collapse>
+          </Stack>
         </form>
       </Paper>
 
       {result && (
-        <Stack gap="md">
-          <Card shadow="sm">
-            <Title order={3} mb="md">Monthly Payment</Title>
-            <Text size="xl" fw={700} c="blue">
+        <Stack gap="md" mt="xl">
+          <Card shadow="sm" p="xl" radius="md" withBorder>
+            <Title order={3} mb="md" c="blue.7">Monthly Payment</Title>
+            <Text size="xl" fw={700} c="blue.7">
               {formatCurrency(result.monthlyPayment)}
             </Text>
           </Card>
 
           <Grid>
             <Grid.Col span={6}>
-              <Card shadow="sm">
+              <Card shadow="sm" p="xl" radius="md" withBorder h="100%">
                 <Stack>
-                  <Title order={4}>Upfront Costs</Title>
+                  <Title order={4} c="blue.7">Upfront Costs</Title>
                   <Text>Down Payment: {formatCurrency(result.downPayment)}</Text>
                   <Popover width={400} position="bottom" withArrow shadow="md">
                     <Popover.Target>
@@ -202,14 +237,12 @@ export function MortgageCalculator() {
               </Card>
             </Grid.Col>
             <Grid.Col span={6}>
-              <Card shadow="sm">
+              <Card shadow="sm" p="xl" radius="md" withBorder h="100%">
                 <Stack>
-                  <Title order={4}>Loan Details</Title>
+                  <Title order={4} c="blue.7">Loan Details</Title>
                   <Text>Loan Amount: {formatCurrency(result.loanAmount)}</Text>
                   <Text>Total Interest: {formatCurrency(result.totalInterest)}</Text>
-                  <Text fw={700}>
-                    Total Cost: {formatCurrency(result.loanAmount + result.totalInterest)}
-                  </Text>
+                  <Text fw={700}>Total Cost: {formatCurrency(result.loanAmount + result.totalInterest)}</Text>
                 </Stack>
               </Card>
             </Grid.Col>
