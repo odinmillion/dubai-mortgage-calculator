@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
   Title,
   NumberInput,
-  Group,
-  Button,
   Text,
   Stack,
   Grid,
@@ -33,10 +31,15 @@ export function MortgageCalculator() {
     },
   });
 
-  const handleSubmit = form.onSubmit((values) => {
-    const result = calculateMortgage(values);
-    setResult(result);
-  });
+  // Recalculate on every input change
+  useEffect(() => {
+    if (!form.isValid()) {
+      setResult(null);
+      return;
+    }
+    setResult(calculateMortgage(form.values));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AE', {
@@ -54,7 +57,7 @@ export function MortgageCalculator() {
       </Title>
 
       <Paper shadow="xs" p="md" mb="xl">
-        <form onSubmit={handleSubmit}>
+        <form>
           <Grid>
             <Grid.Col span={6}>
               <NumberInput
@@ -102,12 +105,6 @@ export function MortgageCalculator() {
               />
             </Grid.Col>
           </Grid>
-
-          <Group justify="center" mt="xl">
-            <Button type="submit" size="lg">
-              Calculate Mortgage
-            </Button>
-          </Group>
         </form>
       </Paper>
 
