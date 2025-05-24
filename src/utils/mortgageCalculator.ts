@@ -3,19 +3,31 @@ export interface MortgageInput {
   downPaymentPercentage: number;
   tenure: number;
   rate: number;
+  bankArrangementFee: number;
+}
+
+export interface PurchaseCostBreakdown {
+  dldFee: number;
+  agentFee: number;
+  registrationTrusteeFee: number;
+  mortgageRegistrationFee: number;
+  mortgageValuationFee: number;
+  bankArrangementFee: number;
+  total: number;
 }
 
 export interface MortgageResult {
   monthlyPayment: number;
   downPayment: number;
   purchaseCost: number;
+  purchaseCostBreakdown: PurchaseCostBreakdown;
   totalUpfront: number;
   loanAmount: number;
   totalInterest: number;
 }
 
 export const calculateMortgage = (input: MortgageInput): MortgageResult => {
-  const { price, downPaymentPercentage, tenure, rate } = input;
+  const { price, downPaymentPercentage, tenure, rate, bankArrangementFee } = input;
   
   // Constants for Dubai mortgage calculation
   const DLD_TAX = 0.04;
@@ -23,20 +35,28 @@ export const calculateMortgage = (input: MortgageInput): MortgageResult => {
   const REGISTRATION_TRUSTEE_FEE = price < 500000 ? 2100 : 4200;
   const MORTGAGE_REGISTRATION = 0.0025;
   const MORTGAGE_VALUATION_FEE = 3150;
-  const BANK_ARRANGEMENT = 0; // 0.01 if applicable
+  const ADMIN_FEE = 580;
 
   // Calculate downpayment
   const downPayment = price * (downPaymentPercentage / 100);
   const loanAmount = price - downPayment;
 
-  // Calculate purchase costs
-  const purchaseCost = 
-    price * DLD_TAX + 580 +
-    price * AGENT_TAX * 1.05 +
-    REGISTRATION_TRUSTEE_FEE +
-    MORTGAGE_REGISTRATION * loanAmount +
-    MORTGAGE_VALUATION_FEE +
-    BANK_ARRANGEMENT * loanAmount * 1.05;
+  // Calculate individual purchase costs
+  const dldFee = price * DLD_TAX;
+  const agentFee = price * AGENT_TAX * 1.05; // Including 5% VAT
+  const mortgageRegistrationFee = MORTGAGE_REGISTRATION * loanAmount;
+  const arrangementFee = (bankArrangementFee / 100) * loanAmount * 1.05; // Including 5% VAT
+
+  const purchaseCostBreakdown: PurchaseCostBreakdown = {
+    dldFee,
+    agentFee,
+    registrationTrusteeFee: REGISTRATION_TRUSTEE_FEE,
+    mortgageRegistrationFee,
+    mortgageValuationFee: MORTGAGE_VALUATION_FEE,
+    bankArrangementFee: arrangementFee,
+    total: dldFee + ADMIN_FEE + agentFee + REGISTRATION_TRUSTEE_FEE + 
+           mortgageRegistrationFee + MORTGAGE_VALUATION_FEE + arrangementFee
+  };
 
   // Calculate monthly payment
   const monthlyRate = rate / (12 * 100);
@@ -50,8 +70,9 @@ export const calculateMortgage = (input: MortgageInput): MortgageResult => {
   return {
     monthlyPayment,
     downPayment,
-    purchaseCost,
-    totalUpfront: purchaseCost + downPayment,
+    purchaseCost: purchaseCostBreakdown.total,
+    purchaseCostBreakdown,
+    totalUpfront: purchaseCostBreakdown.total + downPayment,
     loanAmount,
     totalInterest
   };

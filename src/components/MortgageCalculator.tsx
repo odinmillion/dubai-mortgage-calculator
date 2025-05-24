@@ -7,7 +7,10 @@ import {
   Text,
   Stack,
   Grid,
-  Card
+  Card,
+  Popover,
+  List,
+  Group
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { calculateMortgage } from '../utils/mortgageCalculator';
@@ -18,16 +21,18 @@ export function MortgageCalculator() {
 
   const form = useForm<MortgageInput>({
     initialValues: {
-      price: 3900000,
-      downPaymentPercentage: 22,
+      price: 4000000,
+      downPaymentPercentage: 20,
       tenure: 25,
       rate: 4,
+      bankArrangementFee: 1,
     },
     validate: {
       price: (value) => (value < 100000 ? 'Price must be at least 100,000 AED' : null),
       downPaymentPercentage: (value) => (value < 20 || value > 80 ? 'Down payment must be between 20% and 80%' : null),
       tenure: (value) => (value < 1 || value > 30 ? 'Tenure must be between 1 and 30 years' : null),
       rate: (value) => (value <= 0 || value > 20 ? 'Interest rate must be between 0 and 20%' : null),
+      bankArrangementFee: (value) => (value < 0 || value > 5 ? 'Bank arrangement fee must be between 0% and 5%' : null),
     },
   });
 
@@ -50,6 +55,10 @@ export function MortgageCalculator() {
     }).format(Math.round(value));
   };
 
+  const formatPercentage = (value: number) => {
+    return value ? `${value.toFixed(2)}%` : '0.00%';
+  };
+
   return (
     <Container size="md" py="xl">
       <Title ta="center" mb="xl">
@@ -64,7 +73,7 @@ export function MortgageCalculator() {
                 label="Property Price (AED)"
                 placeholder="Enter property price"
                 {...form.getInputProps('price')}
-                step={100000}
+                step={50000}
                 min={100000}
                 max={100000000}
                 required
@@ -104,6 +113,18 @@ export function MortgageCalculator() {
                 required
               />
             </Grid.Col>
+            <Grid.Col span={6}>
+              <NumberInput
+                label="Bank Arrangement Fee (%)"
+                placeholder="Enter bank fee"
+                {...form.getInputProps('bankArrangementFee')}
+                step={0.5}
+                min={0}
+                max={5}
+                decimalScale={2}
+                required
+              />
+            </Grid.Col>
           </Grid>
         </form>
       </Paper>
@@ -123,7 +144,59 @@ export function MortgageCalculator() {
                 <Stack>
                   <Title order={4}>Upfront Costs</Title>
                   <Text>Down Payment: {formatCurrency(result.downPayment)}</Text>
-                  <Text>Purchase Costs: {formatCurrency(result.purchaseCost)}</Text>
+                  <Popover width={400} position="bottom" withArrow shadow="md">
+                    <Popover.Target>
+                      <Text style={{ cursor: 'pointer' }} td="underline">
+                        Purchase Costs: {formatCurrency(result.purchaseCost)}
+                      </Text>
+                    </Popover.Target>
+                    <Popover.Dropdown>
+                      <Stack>
+                        <Text fw={500}>Purchase Costs Breakdown:</Text>
+                        <List spacing="xs" size="sm">
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>DLD Fee (4%):</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.dldFee)}</Text>
+                            </Group>
+                          </List.Item>
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>Agent Fee (2% + VAT):</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.agentFee)}</Text>
+                            </Group>
+                          </List.Item>
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>Registration Trustee Fee:</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.registrationTrusteeFee)}</Text>
+                            </Group>
+                          </List.Item>
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>Mortgage Registration ({formatPercentage(0.25)}):</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.mortgageRegistrationFee)}</Text>
+                            </Group>
+                          </List.Item>
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>Mortgage Valuation Fee:</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.mortgageValuationFee)}</Text>
+                            </Group>
+                          </List.Item>
+                          <List.Item>
+                            <Group justify="space-between">
+                              <Text>Bank Arrangement Fee ({formatPercentage(form.values.bankArrangementFee)} + VAT):</Text>
+                              <Text>{formatCurrency(result.purchaseCostBreakdown.bankArrangementFee)}</Text>
+                            </Group>
+                          </List.Item>
+                        </List>
+                        <Text fw={700} mt="sm">
+                          Total Purchase Costs: {formatCurrency(result.purchaseCost)}
+                        </Text>
+                      </Stack>
+                    </Popover.Dropdown>
+                  </Popover>
                   <Text fw={700}>Total Upfront: {formatCurrency(result.totalUpfront)}</Text>
                 </Stack>
               </Card>
