@@ -268,6 +268,8 @@ export function MortgageCalculator() {
                             </Text>
                           </>
                         )}
+
+                        <AmortizationTable result={result} />
                       </Stack>
                     </Card>
                   </article>
@@ -362,8 +364,6 @@ export function MortgageCalculator() {
           </Text>
         </footer>
       </Container>
-
-      {result && <AmortizationTable result={result} />}
     </>
   );
 } 

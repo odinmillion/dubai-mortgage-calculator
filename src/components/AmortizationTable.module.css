@@ -1,0 +1,42 @@
+.row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 60px 60px 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 8px 16px;
+  transition: background-color 150ms ease;
+  font-size: 14px;
+  align-items: center;
+}
+
+.row > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row > div:nth-child(n+3) {
+  text-align: right;
+}
+
+.row:hover {
+  background-color: var(--mantine-color-gray-1) !important;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 60px 60px 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  background-color: var(--mantine-color-body);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.header > div:nth-child(n+3) {
+  text-align: right;
+} 
