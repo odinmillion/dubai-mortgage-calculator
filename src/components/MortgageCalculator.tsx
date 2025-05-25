@@ -22,6 +22,7 @@ import { calculateMortgage } from '../utils/mortgageCalculator';
 import type { MortgageInput, MortgageResult } from '../utils/mortgageCalculator';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { SEO } from './SEO';
+import { AmortizationTable } from './AmortizationTable';
 
 export function MortgageCalculator() {
   const [result, setResult] = useState<MortgageResult | null>(null);
@@ -361,6 +362,8 @@ export function MortgageCalculator() {
           </Text>
         </footer>
       </Container>
+
+      {result && <AmortizationTable result={result} />}
     </>
   );
 } 

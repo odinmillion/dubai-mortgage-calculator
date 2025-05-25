@@ -30,6 +30,9 @@ export interface MortgageResult {
   loanAmount: number;
   totalInterest: number;
   effectiveRate: number | null;
+  tenure: number;
+  fixedPeriodMonths: number | null;
+  initialRate: number;
 }
 
 export const calculateMortgage = (input: MortgageInput): MortgageResult => {
@@ -133,6 +136,9 @@ export const calculateMortgage = (input: MortgageInput): MortgageResult => {
     totalUpfront: purchaseCostBreakdown.total + downPayment,
     loanAmount,
     totalInterest,
-    effectiveRate
+    effectiveRate,
+    tenure,
+    fixedPeriodMonths: useVariableRate ? fixedRatePeriod * 12 : null,
+    initialRate: rate
   };
 }; 
