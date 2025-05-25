@@ -74,45 +74,46 @@ export const calculateMortgage = (input: MortgageInput): MortgageResult => {
            mortgageRegistrationFee + MORTGAGE_VALUATION_FEE + arrangementFee
   };
 
-  // Calculate monthly payments
-  const calculateMonthlyPayment = (principal: number, annualRate: number, years: number) => {
-    const monthlyRate = annualRate / (12 * 100);
-    const numberOfPayments = years * 12;
-    const factor = Math.pow(1 + monthlyRate, numberOfPayments);
-    return principal * monthlyRate * factor / (factor - 1);
-  };
-
   let initialMonthlyPayment: number;
   let adjustedMonthlyPayment: number | null = null;
   let totalInterest = 0;
   let effectiveRate: number | null = null;
 
   if (useVariableRate && fixedRatePeriod < tenure) {
-    // Calculate initial period payment (fixed rate)
-    initialMonthlyPayment = calculateMonthlyPayment(loanAmount, rate, tenure);
+    // Calculate for fixed rate period
+    const monthlyRate = rate / (12 * 100);
+    const totalMonths = tenure * 12;
+    
+    // Calculate initial monthly payment
+    initialMonthlyPayment = loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -totalMonths));
     
     // Calculate remaining balance after fixed period
-    const monthlyRate = rate / (12 * 100);
-    const fixedPeriodPayments = fixedRatePeriod * 12;
-    const remainingPrincipal = loanAmount * 
-      (Math.pow(1 + monthlyRate, fixedPeriodPayments) - Math.pow(1 + monthlyRate, fixedPeriodPayments * monthlyRate)) / 
-      (Math.pow(1 + monthlyRate, fixedPeriodPayments) - 1);
+    const fixedPeriodMonths = fixedRatePeriod * 12;
+    const remainingPrincipal = loanAmount * Math.pow(1 + monthlyRate, fixedPeriodMonths) - 
+      initialMonthlyPayment * ((Math.pow(1 + monthlyRate, fixedPeriodMonths) - 1) / monthlyRate);
 
     // Calculate adjusted payment for variable rate period
     const variableRate = eiborRate + variableRateMargin;
-    const remainingYears = tenure - fixedRatePeriod;
-    adjustedMonthlyPayment = calculateMonthlyPayment(remainingPrincipal, variableRate, remainingYears);
+    const variableMonthlyRate = variableRate / (12 * 100);
+    const remainingMonths = totalMonths - fixedPeriodMonths;
+    
+    adjustedMonthlyPayment = remainingPrincipal * variableMonthlyRate / 
+      (1 - Math.pow(1 + variableMonthlyRate, -remainingMonths));
 
     // Calculate total interest
-    totalInterest = (initialMonthlyPayment * fixedPeriodPayments + 
-      adjustedMonthlyPayment * remainingYears * 12) - loanAmount;
+    const interestFixed = (initialMonthlyPayment * fixedPeriodMonths) - 
+      (loanAmount - remainingPrincipal);
+    const interestVariable = (adjustedMonthlyPayment * remainingMonths) - remainingPrincipal;
+    totalInterest = interestFixed + interestVariable;
 
-    // Calculate effective rate
+    // Set effective rate
     effectiveRate = variableRate;
   } else {
     // Standard fixed rate calculation
-    initialMonthlyPayment = calculateMonthlyPayment(loanAmount, rate, tenure);
-    totalInterest = (initialMonthlyPayment * tenure * 12) - loanAmount;
+    const monthlyRate = rate / (12 * 100);
+    const numberOfPayments = tenure * 12;
+    initialMonthlyPayment = loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -numberOfPayments));
+    totalInterest = (initialMonthlyPayment * numberOfPayments) - loanAmount;
   }
 
   return {

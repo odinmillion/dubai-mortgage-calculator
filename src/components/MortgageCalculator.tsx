@@ -29,15 +29,15 @@ export function MortgageCalculator() {
 
   const form = useForm<MortgageInput>({
     initialValues: {
-      price: 4000000,
-      downPaymentPercentage: 20,
+      price: 3900000,
+      downPaymentPercentage: 23,
       tenure: 25,
       rate: 4,
-      bankArrangementFee: 1,
+      bankArrangementFee: 0,
       useVariableRate: false,
-      fixedRatePeriod: 5,
+      fixedRatePeriod: 3,
       variableRateMargin: 1.5,
-      eiborRate: 5.4,
+      eiborRate: 4.3,
     },
     validate: {
       price: (value) => (value < 100000 ? 'Price must be at least 100,000 AED' : null),
