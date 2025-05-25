@@ -79,41 +79,49 @@ export const calculateMortgage = (input: MortgageInput): MortgageResult => {
   let totalInterest = 0;
   let effectiveRate: number | null = null;
 
+  // Helper function to calculate monthly payment
+  const calculatePayment = (principal: number, annualRate: number, months: number): number => {
+    const monthlyRate = annualRate / 12;
+    return principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
+  };
+
+  // Helper function to calculate remaining balance
+  const calculateRemainingBalance = (principal: number, annualRate: number, payment: number, months: number): number => {
+    const monthlyRate = annualRate / 12;
+    return principal * Math.pow(1 + monthlyRate, months) - payment * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+  };
+
   if (useVariableRate && fixedRatePeriod < tenure) {
-    // Calculate for fixed rate period
-    const monthlyRate = rate / (12 * 100);
-    const totalMonths = tenure * 12;
+    // Convert rates to decimal form (4% -> 0.04)
+    const fixedRateDecimal = rate / 100;
+    const variableRateDecimal = (eiborRate + variableRateMargin) / 100;
     
-    // Calculate initial monthly payment
-    initialMonthlyPayment = loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -totalMonths));
+    const totalMonths = tenure * 12;
+    const fixedPeriodMonths = fixedRatePeriod * 12;
+    
+    // Calculate initial monthly payment using fixed rate
+    initialMonthlyPayment = calculatePayment(loanAmount, fixedRateDecimal, totalMonths);
     
     // Calculate remaining balance after fixed period
-    const fixedPeriodMonths = fixedRatePeriod * 12;
-    const remainingPrincipal = loanAmount * Math.pow(1 + monthlyRate, fixedPeriodMonths) - 
-      initialMonthlyPayment * ((Math.pow(1 + monthlyRate, fixedPeriodMonths) - 1) / monthlyRate);
+    const balance = calculateRemainingBalance(loanAmount, fixedRateDecimal, initialMonthlyPayment, fixedPeriodMonths);
 
     // Calculate adjusted payment for variable rate period
-    const variableRate = eiborRate + variableRateMargin;
-    const variableMonthlyRate = variableRate / (12 * 100);
     const remainingMonths = totalMonths - fixedPeriodMonths;
-    
-    adjustedMonthlyPayment = remainingPrincipal * variableMonthlyRate / 
-      (1 - Math.pow(1 + variableMonthlyRate, -remainingMonths));
+    adjustedMonthlyPayment = calculatePayment(balance, variableRateDecimal, remainingMonths);
 
     // Calculate total interest
-    const interestFixed = (initialMonthlyPayment * fixedPeriodMonths) - 
-      (loanAmount - remainingPrincipal);
-    const interestVariable = (adjustedMonthlyPayment * remainingMonths) - remainingPrincipal;
+    const interestFixed = (initialMonthlyPayment * fixedPeriodMonths) - (loanAmount - balance);
+    const interestVariable = (adjustedMonthlyPayment * remainingMonths) - balance;
     totalInterest = interestFixed + interestVariable;
 
     // Set effective rate
-    effectiveRate = variableRate;
+    effectiveRate = eiborRate + variableRateMargin;
   } else {
     // Standard fixed rate calculation
-    const monthlyRate = rate / (12 * 100);
-    const numberOfPayments = tenure * 12;
-    initialMonthlyPayment = loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -numberOfPayments));
-    totalInterest = (initialMonthlyPayment * numberOfPayments) - loanAmount;
+    const fixedRateDecimal = rate / 100;
+    const totalMonths = tenure * 12;
+    initialMonthlyPayment = calculatePayment(loanAmount, fixedRateDecimal, totalMonths);
+    totalInterest = (initialMonthlyPayment * totalMonths) - loanAmount;
   }
 
   return {
