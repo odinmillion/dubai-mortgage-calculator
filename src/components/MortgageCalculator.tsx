@@ -13,7 +13,9 @@ import {
   Group,
   Box,
   UnstyledButton,
-  Collapse
+  Collapse,
+  Switch,
+  Divider
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { calculateMortgage } from '../utils/mortgageCalculator';
@@ -32,6 +34,10 @@ export function MortgageCalculator() {
       tenure: 25,
       rate: 4,
       bankArrangementFee: 1,
+      useVariableRate: false,
+      fixedRatePeriod: 5,
+      variableRateMargin: 1.5,
+      eiborRate: 5.4,
     },
     validate: {
       price: (value) => (value < 100000 ? 'Price must be at least 100,000 AED' : null),
@@ -39,6 +45,14 @@ export function MortgageCalculator() {
       tenure: (value) => (value < 1 || value > 30 ? 'Tenure must be between 1 and 30 years' : null),
       rate: (value) => (value <= 0 || value > 20 ? 'Interest rate must be between 0 and 20%' : null),
       bankArrangementFee: (value) => (value < 0 || value > 5 ? 'Bank arrangement fee must be between 0% and 5%' : null),
+      fixedRatePeriod: (value, values) => {
+        if (!values.useVariableRate) return null;
+        return value < 1 || value >= values.tenure 
+          ? `Fixed rate period must be between 1 and ${values.tenure - 1} years` 
+          : null;
+      },
+      variableRateMargin: (value) => (value < 0 || value > 5 ? 'Variable rate margin must be between 0% and 5%' : null),
+      eiborRate: (value) => (value < 0 || value > 15 ? 'EIBOR rate must be between 0% and 15%' : null),
     },
   });
 
@@ -126,7 +140,7 @@ export function MortgageCalculator() {
                       </Grid.Col>
                       <Grid.Col span={6}>
                         <NumberInput
-                          label="Interest Rate (%)"
+                          label="Initial Interest Rate (%)"
                           description="Annual interest rate"
                           placeholder="Enter interest rate"
                           {...form.getInputProps('rate')}
@@ -152,21 +166,74 @@ export function MortgageCalculator() {
                     </UnstyledButton>
 
                     <Collapse in={showAdvanced}>
-                      <Box>
-                        <NumberInput
-                          label="Bank Arrangement Fee (%)"
-                          description="0-5% of loan amount"
-                          placeholder="Enter bank fee"
-                          {...form.getInputProps('bankArrangementFee')}
-                          step={0.5}
-                          min={0}
-                          max={5}
-                          decimalScale={2}
-                          required
-                          size="md"
-                          hideControls={false}
+                      <Stack>
+                        <Box>
+                          <NumberInput
+                            label="Bank Arrangement Fee (%)"
+                            description="0-5% of loan amount"
+                            placeholder="Enter bank fee"
+                            {...form.getInputProps('bankArrangementFee')}
+                            step={0.5}
+                            min={0}
+                            max={5}
+                            decimalScale={2}
+                            required
+                            size="md"
+                            hideControls={false}
+                          />
+                        </Box>
+                        
+                        <Divider label="Variable Rate Settings" labelPosition="center" />
+                        
+                        <Switch
+                          label="Use Variable Rate"
+                          description="Switch between fixed and variable rate mortgage"
+                          {...form.getInputProps('useVariableRate', { type: 'checkbox' })}
                         />
-                      </Box>
+
+                        {form.values.useVariableRate && (
+                          <>
+                            <NumberInput
+                              label="Fixed Rate Period (Years)"
+                              description="Initial period with fixed rate"
+                              placeholder="Enter fixed rate period"
+                              {...form.getInputProps('fixedRatePeriod')}
+                              step={1}
+                              min={1}
+                              max={form.values.tenure - 1}
+                              required
+                              size="md"
+                              hideControls={false}
+                            />
+                            <NumberInput
+                              label="EIBOR 1M Rate (%)"
+                              description="Current 1-month EIBOR rate"
+                              placeholder="Enter EIBOR rate"
+                              {...form.getInputProps('eiborRate')}
+                              step={0.1}
+                              min={0}
+                              max={15}
+                              decimalScale={2}
+                              required
+                              size="md"
+                              hideControls={false}
+                            />
+                            <NumberInput
+                              label="Bank Margin (%)"
+                              description="Bank's margin over EIBOR"
+                              placeholder="Enter bank margin"
+                              {...form.getInputProps('variableRateMargin')}
+                              step={0.1}
+                              min={0}
+                              max={5}
+                              decimalScale={2}
+                              required
+                              size="md"
+                              hideControls={false}
+                            />
+                          </>
+                        )}
+                      </Stack>
                     </Collapse>
                   </Stack>
                 </form>
@@ -178,10 +245,29 @@ export function MortgageCalculator() {
                 <Stack gap="md" mt="xl">
                   <article aria-label="Monthly Payment">
                     <Card shadow="sm" p="xl" radius="md" withBorder>
-                      <Title order={3} mb="md" c="blue.7">Monthly Payment</Title>
-                      <Text size="xl" fw={700} c="blue.7">
-                        {formatCurrency(result.monthlyPayment)}
-                      </Text>
+                      <Stack>
+                        <Title order={3} c="blue.7">Monthly Payment</Title>
+                        <Text size="xl" fw={700} c="blue.7">
+                          {formatCurrency(result.initialMonthlyPayment)}
+                          {form.values.useVariableRate && (
+                            <Text size="sm" c="dimmed" mt={5}>
+                              Initial payment for first {form.values.fixedRatePeriod} years at {formatPercentage(form.values.rate)}
+                            </Text>
+                          )}
+                        </Text>
+                        
+                        {result.adjustedMonthlyPayment && (
+                          <>
+                            <Text size="xl" fw={700} c="red.7">
+                              {formatCurrency(result.adjustedMonthlyPayment)}
+                              <Text size="sm" c="dimmed" mt={5}>
+                                Adjusted payment after year {form.values.fixedRatePeriod} at {formatPercentage(result.effectiveRate || 0)}
+                                {' '}(EIBOR {formatPercentage(form.values.eiborRate)} + {formatPercentage(form.values.variableRateMargin)})
+                              </Text>
+                            </Text>
+                          </>
+                        )}
+                      </Stack>
                     </Card>
                   </article>
 
