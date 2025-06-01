@@ -48,14 +48,22 @@ export function MortgageCalculator() {
       bankArrangementFee: (value) => (value < 0 || value > 5 ? 'Bank arrangement fee must be between 0% and 5%' : null),
       fixedRatePeriod: (value, values) => {
         if (!values.useVariableRate) return null;
-        return value < 1 || value >= values.tenure 
-          ? `Fixed rate period must be between 1 and ${values.tenure - 1} years` 
+        return value < 1 || value > values.tenure 
+          ? `Fixed rate period must be between 1 and ${values.tenure} years` 
           : null;
       },
       variableRateMargin: (value) => (value < 0 || value > 5 ? 'Variable rate margin must be between 0% and 5%' : null),
       eiborRate: (value) => (value < 0 || value > 15 ? 'EIBOR rate must be between 0% and 15%' : null),
     },
   });
+
+  // Adjust fixed rate period when tenure changes
+  useEffect(() => {
+    if (form.values.useVariableRate && form.values.fixedRatePeriod > form.values.tenure) {
+      // Only decrease fixed period if it becomes greater than tenure
+      form.setFieldValue('fixedRatePeriod', form.values.tenure);
+    }
+  }, [form.values.tenure]);
 
   // Recalculate on every input change
   useEffect(() => {
@@ -109,6 +117,7 @@ export function MortgageCalculator() {
                           required
                           size="md"
                           hideControls={false}
+                          thousandSeparator=","
                         />
                       </Grid.Col>
                       <Grid.Col span={6}>
@@ -128,7 +137,7 @@ export function MortgageCalculator() {
                       <Grid.Col span={6}>
                         <NumberInput
                           label="Loan Tenure (Years)"
-                          description="1-30 years"
+                          description="1-25 years"
                           placeholder="Enter loan tenure"
                           {...form.getInputProps('tenure')}
                           step={1}
@@ -248,20 +257,20 @@ export function MortgageCalculator() {
                     <Card shadow="sm" p="xl" radius="md" withBorder>
                       <Stack>
                         <Title order={3} c="blue.7">Monthly Payment</Title>
-                        <Text size="xl" fw={700} c="blue.7">
+                        <Text size="xl" fw={700} c="blue.7" component="div">
                           {formatCurrency(result.initialMonthlyPayment)}
-                          {form.values.useVariableRate && (
-                            <Text size="sm" c="dimmed" mt={5}>
+                          {form.values.useVariableRate && form.values.fixedRatePeriod < form.values.tenure && (
+                            <Text size="sm" c="dimmed" mt={5} component="div">
                               Initial payment for first {form.values.fixedRatePeriod} years at {formatPercentage(form.values.rate)}
                             </Text>
                           )}
                         </Text>
                         
-                        {result.adjustedMonthlyPayment && (
+                        {result.adjustedMonthlyPayment && form.values.fixedRatePeriod < form.values.tenure && (
                           <>
-                            <Text size="xl" fw={700} c="red.7">
+                            <Text size="xl" fw={700} c="red.7" component="div">
                               {formatCurrency(result.adjustedMonthlyPayment)}
-                              <Text size="sm" c="dimmed" mt={5}>
+                              <Text size="sm" c="dimmed" mt={5} component="div">
                                 Adjusted payment after year {form.values.fixedRatePeriod} at {formatPercentage(result.effectiveRate || 0)}
                                 {' '}(EIBOR {formatPercentage(form.values.eiborRate)} + {formatPercentage(form.values.variableRateMargin)})
                               </Text>
