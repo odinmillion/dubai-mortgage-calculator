@@ -30,12 +30,12 @@ export function MortgageCalculator() {
 
   const form = useForm<MortgageInput>({
     initialValues: {
-      price: 3900000,
-      downPaymentPercentage: 23,
+      price: 2000000,
+      downPaymentPercentage: 20,
       tenure: 25,
       rate: 4,
-      bankArrangementFee: 0,
-      useVariableRate: false,
+      bankArrangementFee: 1.0,
+      useVariableRate: true,
       fixedRatePeriod: 3,
       variableRateMargin: 1.5,
       eiborRate: 4.3,
@@ -43,7 +43,7 @@ export function MortgageCalculator() {
     validate: {
       price: (value) => (value < 100000 ? 'Price must be at least 100,000 AED' : null),
       downPaymentPercentage: (value) => (value < 20 || value > 80 ? 'Down payment must be between 20% and 80%' : null),
-      tenure: (value) => (value < 1 || value > 30 ? 'Tenure must be between 1 and 30 years' : null),
+      tenure: (value) => (value < 1 || value > 25 ? 'Tenure must be between 1 and 25 years' : null),
       rate: (value) => (value <= 0 || value > 20 ? 'Interest rate must be between 0 and 20%' : null),
       bankArrangementFee: (value) => (value < 0 || value > 5 ? 'Bank arrangement fee must be between 0% and 5%' : null),
       fixedRatePeriod: (value, values) => {
