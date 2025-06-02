@@ -369,7 +369,7 @@ export function MortgageCalculator() {
 
         <footer>
           <Text size="sm" c="dimmed" ta="center" mt="xl">
-            This calculator provides estimates for Dubai property purchases. Actual costs may vary. Please consult with financial advisors for accurate information.
+            This calculator provides estimates for Dubai property purchases. The results are for informational purposes only and should not be considered as financial advice. Actual costs, interest rates, and terms may vary. Please consult with banks, licensed financial advisors, or mortgage specialists for accurate information and personalized advice.
           </Text>
         </footer>
       </Container>
